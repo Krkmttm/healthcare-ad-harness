@@ -1,4 +1,11 @@
 # ヘルスケア広告 背景画像の自己採点ハーネス
+# Self-Scoring Harness for Healthcare Ad Backgrounds
+
+[日本語](#日本語) | [English](#english)
+
+---
+
+## 日本語
 
 +81 Builders ハッカソン「モデルではなく、ハーネスをつくる」（2026/11/17）の作品です。
 
@@ -65,3 +72,74 @@ AIに「ヘルスケアの広告の背景画像をつくって」と頼むと、
 ## 注意
 
 お手本画像には Adobe Stock の透かし入り画像を使ったため、このリポジトリには含めていません。
+
+---
+
+## English
+
+A project for the +81 Builders hackathon "Build the Harness, Not the Model" (Nov 17, 2026).
+
+### In one sentence
+
+A system that scores AI-generated ad background images against **a designer's own scoring criteria**, and keeps revising the image prompt until the images get better. The model itself is untouched; only the system around it (the harness) was built.
+
+Harness component improved: **evaluation**
+
+### The problem
+
+If you ask an AI to "make a background image for a healthcare ad," you get something plausible. But nobody checks whether it fits the brand. What counts as "good" depends on the use case and the brand, so a general-purpose model can't judge it on its own.
+
+### How it works
+
+```
+Product summary + reference images (chosen by the designer)
+  ↓
+① Prompt writer: writes an English image-generation prompt
+   (round 1 does not see the references = the "before" baseline)
+  ↓
+② Image generation: generated in an external image AI, then pasted into the page
+  ↓
+③ Scorer: compares the image with the references and scores 3 criteria out of 10 (evaluation)
+  ↓
+④ Verification: code (not AI) checks the brand color is present and banned words are absent
+  ↓
+⑤ If any score is below 7, the scorer's reasons are fed back and the prompt is rewritten → back to ② (loop)
+   Stops after at most 3 rounds (guardrail)
+```
+
+### Scoring criteria (written by the designer)
+
+| Criterion | 10 points | 1 point |
+|---|---|---|
+| Healthcare feel | Has motifs that evoke medicine — heartbeat waveforms, molecule-like hexagons, white coats, stethoscopes — and feels clean and trustworthy | No link to health or medicine (household goods, dining tables, lifestyle photos) |
+| Technology feel | Network nodes and lines, hexagon or dot patterns, light particles, soft glow — data and AI expressed with restraint | No technology elements, or garish multi-color effects |
+| Brand fit / usability as a background | Blue monochrome built around brand color `#2563F4`, with generous empty space for text | Non-blue colors stand out, too busy for text, lifestyle photo |
+
+To keep the scorer from being lenient, it also follows a rule: "if you name any weakness, the score must be 6 or lower."
+
+### Results and lessons
+
+- Round 1 (AI on its own) averaged about 3.2. It produced a bedroom lifestyle photo that scored 2. After revisions the average rose to about 6.2, converging on blue backgrounds with heartbeat lines and hexagons. The same criteria also worked for other products.
+- **The first failure was the biggest lesson.** At first I told the scorer that "looking AI-made" was bad, so it passed a stylish morning-desk photo. But what the brand actually wanted for healthcare backgrounds was the opposite: a refined sense of technology. After rewriting the criteria while looking at reference images, the scorer started to agree with the designer's eye.
+- **Evaluation turned out to be the part only a human can define.**
+
+### How to run
+
+`index.html` runs as a Claude artifact (a page published on claude.ai). It calls Claude from the page (`claude.use("sample")`, with image input), so opening `index.html` directly in a browser will not run the AI parts.
+
+1. Open the page published as an artifact on claude.ai
+2. Add 2–3 reference images
+3. Enter a product summary and press 「プロンプトをつくる」 (Generate prompts)
+4. Copy the prompt, generate an image in an image AI, and paste it onto the card
+5. Repeat while reviewing the scores and the improved prompts
+
+### Next steps
+
+- Automate scorer calibration: prepare 10 images the designer judges good and 10 judged bad, and measure how well the scorer agrees
+- Tune the scorer's strictness (currently a bit too strict)
+- Remember adopted images (memory)
+- Connect an image-generation API for full automation
+
+### Note
+
+The reference images were watermarked Adobe Stock images, so they are not included in this repository.
